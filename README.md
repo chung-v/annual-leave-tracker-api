@@ -53,20 +53,46 @@ This API solves these issues by offering real-time visibility into approved leav
 - **python-dotenv==1.0.1:** Manages environment variables through an .env file, allowing easy configuration of settings such as database URLs and API keys without hardcoding sensitive information.
 
 - **SQLAlchemy==2.0.32:** SQL toolkit and ORM library for Python, enabling efficient database interaction and management in the application.
-- 
+
 - **typing_extensions==4.12.2:** Backports new type system features to be used in older Python versions.
 
 - **Werkzeug==3.0.3:** Werkzeug is a comprehensive WSGI web application library that serves as Flask's underlying toolkit, offering utilities and middleware components for effective request handling, debugging, and routing.
 
 ## R4 Explain the benefits and drawbacks of this app’s underlying database system.
-PostgreSQL is chosen as the database system for this API.
+PostgreSQL is used as the database system for this API.
 
 The advantages of using PostgreSQL include its adherence to ACID principles, which ensure the integrity, consistency, and reliability of transactions. This system also employs Multi-Version Concurrency Control (MVCC), allowing multiple transactions to occur simultaneously without locking the data, thus preventing conflicts and enhancing performance. PostgreSQL's extensibility permits users to create custom data types, operators, and functions, catering to specific project needs. Furthermore, it benefits from an active community that contributes to comprehensive documentation and regular updates, providing ongoing support.
 
 Despite its strengths, PostgreSQL does have some drawbacks. It can be memory and CPU-intensive, which may lead to performance issues as data volume and complexity increase. The setup and configuration process can be intricate, especially for those looking to leverage its advanced capabilities, resulting in a steeper learning curve for beginners. Being an open-source database, there may be inconsistencies in user-friendly features or interfaces due to contributions from various communities, potentially leading to compatibility issues that require specific software or hardware.
 
 ## R5 Explain the features, purpose and functionalities of the object-relational mapping system (ORM) used in this app.
+This app is built using SQLAlchemy as the Object-Relational Mapping (ORM) system. It acts as a bridge between Python application code and relational databases. By mapping database tables to Python classes, it simplifies database interactions and eliminates the need for raw SQL queries.
 
+### Features
+**Model Definitions:** Database tables like `User` are represented as Python classes, where class attributes correspond to table columns.
+    
+    class User(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+
+**CRUD Operations:** Create, Read, Update, and Delete operations to interact with the database effectively.
+
+    @app.route("/<int:user_id>", methods=["GET"])
+    def get_user(user_id):
+        user = db.session.query(User).filter_by(id=user_id).first()
+        return user_schema.dump(user) if user else {"error": "User not found"}
+
+**Querying:** retrieve all entries or filter results.
+
+**Joins and Relationships:** Simplify handling relationships between tables, allowing easy access to related data.
+
+**Schema Validation:** Enforces data integrity through column constraints like `NOT NULL` and `UNIQUE`, ensuring valid data entry.
+
+**Foreign Keys:** Facilitates the definition of foreign keys to establish relationships between different entities.
+
+### Purpose and Functionalities
+SQLAlchemy is an efficient ORM tool that streamlines database interactions in this application. It enables developers to work with Python objects rather than raw SQL, fostering a clearer coding approach. By reducing the complexity of database operations, it facilitates quicker development and easier maintenance. Additionally, SQLAlchemy ensures seamless compatibility with PostgreSQL, effectively leveraging its features for optimal data management.
 
 ## R6 Design an entity relationship diagram (ERD) for this app’s database, and explain how the relations between the diagrammed models will aid the database design. This should focus on the database design BEFORE coding has begun, eg. during the project planning or design phase.
 
