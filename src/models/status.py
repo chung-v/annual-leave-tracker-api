@@ -6,7 +6,7 @@ from marshmallow.validate import OneOf
 VALID_STATUSES = (
     "pending",    # When the employee submits a leave request and is waiting for approval
     "approved",   # When the leave request is approved by admin
-    "cancelled",  # When the employee cancels their leave request
+    "rejected",   # When the leave request is rejected by admin
 )
 
 class Status(db.Model):
@@ -15,7 +15,7 @@ class Status(db.Model):
 
     # Attributes of the table
     id = db.Column(db.Integer, primary_key=True)
-    status_name = db.Column(db.String(100), nullable=False, unique=True)
+    status_name = db.Column(db.String, nullable=False, unique=True)
 
     # Relationships
     leave_requests = db.relationship('LeaveRequest', back_populates='status')
