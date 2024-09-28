@@ -7,6 +7,9 @@ from controllers.cli_controllers import db_commands
 from controllers.auth_controller import auth_bp
 from controllers.leave_request_controller import leave_request_bp
 from controllers.employee_controller import employee_bp
+from controllers.department_controller import department_bp
+from controllers.team_controller import team_bp
+
 
 def create_app():
     app = Flask(__name__)
@@ -38,5 +41,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(leave_request_bp)
     app.register_blueprint(employee_bp)
+    app.register_blueprint(department_bp)
+    app.register_blueprint(team_bp)
 
     return app
