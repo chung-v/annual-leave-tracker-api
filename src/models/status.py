@@ -20,7 +20,6 @@ class Status(db.Model):
     # Relationships
     leave_requests = db.relationship('LeaveRequest', back_populates='status')
 
-
 class StatusSchema(ma.Schema):
     # Nested relationship field
     leave_requests = fields.List(fields.Nested('LeaveRequestSchema', exclude=["status"]))
@@ -31,7 +30,6 @@ class StatusSchema(ma.Schema):
     class Meta:
         # Fields to expose
         fields = ("id", "status_name", "leave_requests")
-
 
 # To handle a single status object
 status_schema = StatusSchema()

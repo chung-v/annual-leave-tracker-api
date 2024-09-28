@@ -23,8 +23,8 @@ class TeamSchema(ma.Schema):
         # Fields to expose
         fields = ("id", "team_name", "department_id", "employees", "department")
 
-# to handle a single team object
+# To handle a single team object
 team_schema = TeamSchema()
 
-# to handle a list of team objects
+# To handle a list of team objects
 teams_schema = TeamSchema(many=True)
