@@ -16,10 +16,14 @@ class LeaveRequest(db.Model):
     employee = db.relationship('Employee', back_populates='leave_requests')
     status = db.relationship('Status', back_populates='leave_requests')
 
+    __table_args__ = (
+        db.UniqueConstraint('employee_id', 'start_date', 'end_date', name='uix_employee_dates'),
+    )
+
 class LeaveRequestSchema(ma.Schema):
     # Nested fields for relationships
     employee = fields.Nested('EmployeeSchema', only=["first_name", "last_name"])
-    status = fields.Nested('StatusSchema', exclude=["leave_requests"])
+    status = fields.Nested('StatusSchema', only=["status_name"])
 
     # Fields for validation
     start_date = fields.Date(required=True)
@@ -37,7 +41,7 @@ class LeaveRequestSchema(ma.Schema):
         fields = ("id", "employee_id", "employee", "start_date", "end_date", "status_id", "status")
 
 # To handle a single leave request object
-leave_request_schema = LeaveRequestSchema()
+leave_request_schema = LeaveRequestSchema(exclude=["employee_id", "employee", "status_id"])
 
 # To handle a list of leave request objects
 leave_requests_schema = LeaveRequestSchema(many=True, exclude=["employee_id", "status_id", "status"])

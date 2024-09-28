@@ -5,17 +5,25 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from init import db
 from models.leave_request import LeaveRequest, leave_request_schema, leave_requests_schema
+from models.status import Status
 from utils import auth_as_admin_decorator
+
+from sqlalchemy.exc import IntegrityError
+from psycopg2 import errorcodes
 
 leave_request_bp = Blueprint("leave_request", __name__, url_prefix="/leave_request")
 
 # View all leave requests for self
-@leave_request_bp.route("/", methods=["GET"])
+@leave_request_bp.route("", methods=["GET"])
 @jwt_required()
-def view_own_leave_requests():
+def view_leave_requests():
     employee_id = get_jwt_identity()
     leave_requests = LeaveRequest.query.filter_by(employee_id=employee_id).all()
-    return leave_requests_schema.dump(leave_requests), 200
+    
+    if leave_requests:
+        return leave_requests_schema.dump(leave_requests), 200
+    
+    return {"message": "No leave requests found."}, 404
 
 # View specific leave request for self
 @leave_request_bp.route("/<int:leave_request_id>", methods=["GET"])
@@ -23,86 +31,86 @@ def view_own_leave_requests():
 def view_specific_leave_request(leave_request_id):
     employee_id = get_jwt_identity()
     leave_request = LeaveRequest.query.filter_by(id=leave_request_id, employee_id=employee_id).first()
+
     if leave_request:
         return leave_request_schema.dump(leave_request), 200
+    
     return {"error": "Leave request not found."}, 404
 
-# View all leaves in a specific month (admin only)
-@leave_request_bp.route("/<int:year>/<int:month>", methods=["GET"])
-@jwt_required()
-@auth_as_admin_decorator
-def view_all_leaves(year, month):
-    # Validate the month and year
-    try:
-        # Calculate start and end dates for the specified month
-        start_date = datetime(year, month, 1)
-        if month == 12:  # December
-            end_date = datetime(year + 1, 1, 1)  # January of the next year
-        else:
-            end_date = datetime(year, month + 1, 1)  # First day of the next month
-
-        # Query for leave requests in the specified date range
-        leaves = LeaveRequest.query.filter(
-            LeaveRequest.start_date >= start_date,
-            LeaveRequest.start_date < end_date
-        ).all()
-        
-        return leave_requests_schema.dump(leaves, many=True), 200
-    except ValueError:
-        return {"error": "Invalid month or year provided."}, 400
-
 # Add new leave request
-@leave_request_bp.route("/", methods=["POST"])
+@leave_request_bp.route("/add", methods=["POST"])
 @jwt_required()
 def add_leave_request():
     body_data = request.get_json()
+
+    # Validate the data before creating the LeaveRequest
+    start_date = body_data.get("start_date")
+    end_date = body_data.get("end_date")
+
+    if not start_date or not end_date:
+        return {"error": "Start date and end date are required."}, 400
+    
+    if start_date > end_date:
+        return {"error": "Start date must be before end date."}, 400
+
+    # Fetch the "pending" status from the database
+    pending_status = db.session.query(Status).filter(Status.status_name == "pending").first()
+    
     leave_request = LeaveRequest(
         employee_id=get_jwt_identity(),
-        start_date=body_data.get("start_date"),
-        end_date=body_data.get("end_date"),
-        reason=body_data.get("reason"),
-        status="pending"
+        start_date=start_date,
+        end_date=end_date,
+        status=pending_status  # Set the status to pending
     )
-    db.session.add(leave_request)
-    db.session.commit()
-    return leave_request_schema.dump(leave_request), 201
+
+    try:
+        db.session.add(leave_request)
+        db.session.commit()
+        return leave_request_schema.dump(leave_request), 201
+      
+        # Error handling
+    except IntegrityError as err:
+        if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
+            return {"error": "Leave request with the same dates already exists."}, 400
 
 # Delete leave request
-@leave_request_bp.route("/<int:leave_request_id>", methods=["DELETE"])
+@leave_request_bp.route("/delete/<int:leave_request_id>", methods=["DELETE"])
 @jwt_required()
-def cancel_leave_request(leave_request_id):
-    employee_id = get_jwt_identity()
-    leave_request = LeaveRequest.query.filter_by(id=leave_request_id, employee_id=employee_id).first()
+def delete_leave_request(leave_request_id):
+    # Fetch the leave request from the database
+    stmt = db.select(LeaveRequest).filter_by(id=leave_request_id)
+    leave_request = db.session.scalar(stmt)
+    
+    # If leave request exists
     if leave_request:
+        # Delete the leave request
         db.session.delete(leave_request)
         db.session.commit()
-        return {"message": "Leave request cancelled."}, 200
-    return {"error": "Leave request not found."}, 404
-
-# Edit leave request (admin only)
-@leave_request_bp.route("/<int:leave_request_id>", methods=["PUT", "PATCH"])
-@jwt_required()
-@auth_as_admin_decorator
-def edit_leave_request(leave_request_id):
-    body_data = request.get_json()
-    employee_id = get_jwt_identity()
-    leave_request = LeaveRequest.query.filter_by(id=leave_request_id, employee_id=employee_id).first()
-    if leave_request:
-        leave_request.start_date = body_data.get("start_date", leave_request.start_date)
-        leave_request.end_date = body_data.get("end_date", leave_request.end_date)
-        leave_request.reason = body_data.get("reason", leave_request.reason)
-        db.session.commit()
-        return leave_request_schema.dump(leave_request), 200
-    return {"error": "Leave request not found."}, 404
+        return {"message": f"Leave request ID {leave_request_id} deleted successfully."}
+    else:
+        # Return error message
+        return {"error": f"Leave request ID {leave_request_id} not found."}, 404
 
 # Approve leave request (admin only)
-@leave_request_bp.route("/<int:leave_request_id>/approve", methods=["POST"])
+@leave_request_bp.route("/approve/<int:leave_request_id>", methods=["POST"])
 @jwt_required()
 @auth_as_admin_decorator
 def approve_leave_request(leave_request_id):
-    leave_request = LeaveRequest.query.get(leave_request_id)
+    # Fetch the leave request from the database
+    stmt = db.select(LeaveRequest).filter_by(id=leave_request_id)
+    leave_request = db.session.scalar(stmt)
+    
+    # If leave request exists
     if leave_request:
-        leave_request.status = "approved"
+        # Fetch the "approved" status from the database
+        approved_status = db.session.query(Status).filter(Status.status_name == "approved").first()
+
+        # Update the status of the leave request
+        leave_request.status = approved_status
+        
         db.session.commit()
         return leave_request_schema.dump(leave_request), 200
-    return {"error": "Leave request not found."}, 404
+
+    else:
+        # Return error message if leave request is not found
+        return {"error": f"Leave request ID {leave_request_id} not found."}, 404
