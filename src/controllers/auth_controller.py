@@ -4,7 +4,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 from init import bcrypt, db
-from models import Employee, employee_schema, EmployeeSchema
+from models.employee import Employee, employee_schema, EmployeeSchema
 from utils import auth_as_admin_decorator
 
 from sqlalchemy.exc import IntegrityError
@@ -136,3 +136,29 @@ def delete_employee(employee_id):
     else:
         # Returns error message
         return {"message": f"Employee with id {employee_id} not found."}, 404
+
+# Add employee as admin
+@auth_bp.route("/employees/<int:employee_id>/admin", methods=["POST"])
+@jwt_required()
+@auth_as_admin_decorator
+def add_employee_as_admin(employee_id):
+    # Find the employee in the database
+    employee = Employee.query.get(employee_id)
+    if employee:
+        employee.is_admin = True
+        db.session.commit()
+        return {"message": f"Employee {employee_id} is now an admin."}, 200
+    return {"error": "Employee not found."}, 404
+
+# Remove employee as admin
+@auth_bp.route("/employees/<int:employee_id>/admin", methods=["DELETE"])
+@jwt_required()
+@auth_as_admin_decorator
+def remove_employee_as_admin(employee_id):
+    # Find the employee in the database
+    employee = Employee.query.get(employee_id)
+    if employee:
+        employee.is_admin = False
+        db.session.commit()
+        return {"message": f"Employee {employee_id} is no longer an admin."}, 200
+    return {"error": "Employee not found."}, 404
