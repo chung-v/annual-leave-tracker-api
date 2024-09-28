@@ -2,7 +2,7 @@ from datetime import date
 
 from flask import Blueprint
 from init import db, bcrypt
-from models import Employee, LeaveRequest, Status
+from models import Employee, Department, Team, Status, LeaveRequest
 
 db_commands = Blueprint("db", __name__)
 
@@ -13,7 +13,30 @@ def create_tables():
 
 @db_commands.cli.command("seed")
 def seed_tables():
-    # Creates a list of Employee instances
+    # Create a list of Department instances
+    departments = [
+        Department(name="Human Resources"),
+        Department(name="Marketing"),
+        Department(name="IT")
+    ]
+    
+    # Add and commit departments to the database
+    db.session.add_all(departments)
+    db.session.commit()  # Commit to save department records before referencing them in Team instances
+
+    # Create a list of Team instances
+    teams = [
+        Team(name="Recruitment Team", department_id=1),
+        Team(name="Project Management Team", department_id=2),
+        Team(name="Customer Relationship Management Team", department_id=2),
+        Team(name="Development Team", department_id=3)
+    ]
+
+    # Add and commit teams to the database
+    db.session.add_all(teams)
+    db.session.commit() # Commit to save team records before referencing them in Employee instances
+    
+    # Create a list of Employee instances
     employees = [
         Employee(
             first_name = "Veronica",
@@ -26,45 +49,61 @@ def seed_tables():
         Employee(
             first_name = "John",
             last_name = "Smith",
-            team_id = 1,
+            team_id = 2,
             email = "john.smith@email.com",
             password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
+            is_admin = True
         ),
         Employee(
             first_name = "Isidro",
             last_name = "Silva",
-            team_id = 2,
+            team_id = 3,
             email = "isidro.silva@email.com",
             password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8"),
             is_admin = True
         ), 
         Employee(
+            first_name = "Cecelia",
+            last_name = "Woodward",
+            team_id = 3,
+            email = "cecelia.woodward@email.com",
+            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
+        ),
+        Employee(
             first_name = "Parker",
             last_name = "Durham",
-            team_id = 2,
+            team_id = 4,
             email = "parker.durham@email.com",
+            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
+            is_admin = True
+        ),
+        Employee(
+            first_name = "Sue",
+            last_name = "Joseph",
+            team_id = 4,
+            email = "sue.joseph@email.com",
             password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
         )
     ]
 
     db.session.add_all(employees)
 
-    # References existing status names
+    # Reference existing status names
     pending_status = Status.query.filter_by(status_name="Pending").first()
     approved_status = Status.query.filter_by(status_name="Approved").first()
 
-    # Creates a list of LeaveRequest instances
+    # Create a list of LeaveRequest instances
     leave_requests = [
         LeaveRequest(
             start_date=date(2024, 10, 1),
             end_date=date(2024, 10, 4),
-            employee=employees[0],  # Assign to Veronica
+            employee=employees[3],  # Assign to Cecelia
             status=pending_status   # Reference existing status
         ),
         LeaveRequest(
             start_date=date(2024, 11, 11),
             end_date=date(2024, 11, 15),
-            employee=employees[1],  # Assign to John
+            employee=employees[5],  # Assign to Sue
             status=approved_status  # Reference existing status
         )
     ]
