@@ -2,7 +2,11 @@ from datetime import date
 
 from flask import Blueprint
 from init import db, bcrypt
-from models import Employee, Department, Team, Status, LeaveRequest
+from models.department import Department
+from models.team import Team
+from models.employee import Employee
+from models.status import Status, VALID_STATUSES
+from models.leave_request import LeaveRequest
 
 db_commands = Blueprint("db", __name__)
 
@@ -15,9 +19,9 @@ def create_tables():
 def seed_tables():
     # Create a list of Department instances
     departments = [
-        Department(name="Human Resources"),
-        Department(name="Marketing"),
-        Department(name="IT")
+        Department(department_name="Human Resources"),
+        Department(department_name="Marketing"),
+        Department(department_name="IT")
     ]
     
     # Add and commit departments to the database
@@ -26,10 +30,10 @@ def seed_tables():
 
     # Create a list of Team instances
     teams = [
-        Team(name="Recruitment Team", department_id=1),
-        Team(name="Project Management Team", department_id=2),
-        Team(name="Customer Relationship Management Team", department_id=2),
-        Team(name="Development Team", department_id=3)
+        Team(team_name="Recruitment Team", department_id=1),
+        Team(team_name="Project Management Team", department_id=2),
+        Team(team_name="Customer Relationship Management Team", department_id=2),
+        Team(team_name="Development Team", department_id=3)
     ]
 
     # Add and commit teams to the database
@@ -88,9 +92,11 @@ def seed_tables():
 
     db.session.add_all(employees)
 
-    # Reference existing status names
-    pending_status = Status.query.filter_by(status_name="Pending").first()
-    approved_status = Status.query.filter_by(status_name="Approved").first()
+    # Create a list of Status instances
+    statuses = [Status(status_name=status) for status in VALID_STATUSES]
+
+    db.session.add_all(statuses)
+    db.session.commit()
 
     # Create a list of LeaveRequest instances
     leave_requests = [
@@ -98,18 +104,23 @@ def seed_tables():
             start_date=date(2024, 10, 1),
             end_date=date(2024, 10, 4),
             employee=employees[3],  # Assign to Cecelia
-            status=pending_status   # Reference existing status
+            status=statuses[0]      # Pending
         ),
         LeaveRequest(
             start_date=date(2024, 11, 11),
             end_date=date(2024, 11, 15),
             employee=employees[5],  # Assign to Sue
-            status=approved_status  # Reference existing status
+            status=statuses[1]      # Approved
+        ),
+        LeaveRequest(
+            start_date=date(2024, 11, 25),
+            end_date=date(2024, 11, 27),
+            employee=employees[5],  # Assign to Sue
+            status=statuses[2]      # Rejected
         )
     ]
 
     db.session.add_all(leave_requests)
-
     db.session.commit()
 
     print("Tables seeded.")

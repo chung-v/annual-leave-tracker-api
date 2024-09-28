@@ -96,7 +96,7 @@ def update_employee():
 @auth_bp.route("/employee/update/<int:employee_id>", methods=["PUT"])
 @jwt_required()
 @auth_as_admin_decorator
-def update_employee(employee_id):
+def admin_update_employee(employee_id):
     # Fetches the employee from the db
     stmt = db.select(Employee).filter_by(id=employee_id)
     employee = db.session.scalar(stmt)
@@ -141,7 +141,7 @@ def delete_employee(employee_id):
 @auth_bp.route("/employees/<int:employee_id>/admin", methods=["POST"])
 @jwt_required()
 @auth_as_admin_decorator
-def add_employee_as_admin(employee_id):
+def add_admin(employee_id):
     # Find the employee in the database
     employee = Employee.query.get(employee_id)
     if employee:
@@ -154,7 +154,7 @@ def add_employee_as_admin(employee_id):
 @auth_bp.route("/employees/<int:employee_id>/admin", methods=["DELETE"])
 @jwt_required()
 @auth_as_admin_decorator
-def remove_employee_as_admin(employee_id):
+def remove_admin(employee_id):
     # Find the employee in the database
     employee = Employee.query.get(employee_id)
     if employee:
