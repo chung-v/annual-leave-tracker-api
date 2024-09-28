@@ -30,10 +30,10 @@ class EmployeeSchema(ma.Schema):
     password = fields.String(load_only=True, required=True, validate=Length(min=6, error="Password must be at least 6 characters long."))
 
     class Meta:
-        fields = ("id", "first_name", "last_name", "email", "password", "team_id", "is_admin", "leave_requests", "team")
+        fields = ("id", "first_name", "last_name", "email", "password", "is_admin", "leave_requests", "team_id", "team")
 
 # To handle a single employee object
 employee_schema = EmployeeSchema(exclude=["password"])
 
 # To handle a list of employee objects
-employees_schema = EmployeeSchema(many=True, exclude=["password"])
+employees_schema = EmployeeSchema(many=True, exclude=["password", "leave_requests", "team_id"])
