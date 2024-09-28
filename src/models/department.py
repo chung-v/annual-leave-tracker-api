@@ -1,5 +1,6 @@
 from init import db, ma
 from marshmallow import fields
+from marshmallow.validate import Length
 
 class Department(db.Model):
     # Name of the table
@@ -15,7 +16,9 @@ class Department(db.Model):
 class DepartmentSchema(ma.Schema):
     # Nested relationship field
     teams = fields.List(fields.Nested('TeamSchema', exclude=["department"]))
-
+#    Require department_name to be a non-empty string
+    department_name = fields.String(required=True, validate=Length(min=1, error="Department name cannot be empty."))
+    
     class Meta:
         # Fields to expose
         fields = ("id", "department_name", "teams")
