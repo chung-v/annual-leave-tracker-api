@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -7,7 +9,7 @@ from utils import auth_as_admin_decorator
 
 leave_request_bp = Blueprint("leave_request", __name__, url_prefix="/leave_request")
 
-# View all employee's own leave requests
+# View all leave requests for self
 @leave_request_bp.route("/", methods=["GET"])
 @jwt_required()
 def view_own_leave_requests():
@@ -15,7 +17,7 @@ def view_own_leave_requests():
     leave_requests = LeaveRequest.query.filter_by(employee_id=employee_id).all()
     return leave_requests_schema.dump(leave_requests), 200
 
-# View specific employee's own leave request
+# View specific leave request for self
 @leave_request_bp.route("/<int:leave_request_id>", methods=["GET"])
 @jwt_required()
 def view_specific_leave_request(leave_request_id):
@@ -24,6 +26,30 @@ def view_specific_leave_request(leave_request_id):
     if leave_request:
         return leave_request_schema.dump(leave_request), 200
     return {"error": "Leave request not found."}, 404
+
+# View all leaves in a specific month (admin only)
+@leave_request_bp.route("/<int:year>/<int:month>", methods=["GET"])
+@jwt_required()
+@auth_as_admin_decorator
+def view_all_leaves(year, month):
+    # Validate the month and year
+    try:
+        # Calculate start and end dates for the specified month
+        start_date = datetime(year, month, 1)
+        if month == 12:  # December
+            end_date = datetime(year + 1, 1, 1)  # January of the next year
+        else:
+            end_date = datetime(year, month + 1, 1)  # First day of the next month
+
+        # Query for leave requests in the specified date range
+        leaves = LeaveRequest.query.filter(
+            LeaveRequest.start_date >= start_date,
+            LeaveRequest.start_date < end_date
+        ).all()
+        
+        return leave_requests_schema.dump(leaves, many=True), 200
+    except ValueError:
+        return {"error": "Invalid month or year provided."}, 400
 
 # Add new leave request
 @leave_request_bp.route("/", methods=["POST"])
@@ -41,7 +67,7 @@ def add_leave_request():
     db.session.commit()
     return leave_request_schema.dump(leave_request), 201
 
-# Cancel leave request
+# Delete leave request
 @leave_request_bp.route("/<int:leave_request_id>", methods=["DELETE"])
 @jwt_required()
 def cancel_leave_request(leave_request_id):
@@ -53,9 +79,10 @@ def cancel_leave_request(leave_request_id):
         return {"message": "Leave request cancelled."}, 200
     return {"error": "Leave request not found."}, 404
 
-# Submit request to edit leave request
+# Edit leave request (admin only)
 @leave_request_bp.route("/<int:leave_request_id>", methods=["PUT", "PATCH"])
 @jwt_required()
+@auth_as_admin_decorator
 def edit_leave_request(leave_request_id):
     body_data = request.get_json()
     employee_id = get_jwt_identity()
