@@ -18,7 +18,7 @@ class LeaveRequest(db.Model):
 
 class LeaveRequestSchema(ma.Schema):
     # Nested fields for relationships
-    employee = fields.Nested('EmployeeSchema', exclude=["leave_requests"])
+    employee = fields.Nested('EmployeeSchema', only=["first_name", "last_name"])
     status = fields.Nested('StatusSchema', exclude=["leave_requests"])
 
     # Fields for validation
@@ -34,10 +34,10 @@ class LeaveRequestSchema(ma.Schema):
             raise ValidationError("Start date cannot be in the past.")
 
     class Meta:
-        fields = ("id", "employee_id", "start_date", "end_date", "status_id", "employee", "status")
+        fields = ("id", "employee_id", "employee", "start_date", "end_date", "status_id", "status")
 
 # To handle a single leave request object
 leave_request_schema = LeaveRequestSchema()
 
 # To handle a list of leave request objects
-leave_requests_schema = LeaveRequestSchema(many=True)
+leave_requests_schema = LeaveRequestSchema(many=True, exclude=["employee_id", "status_id", "status"])

@@ -2,13 +2,6 @@ from init import db, ma
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
-# Define valid statuses for leave requests
-VALID_STATUSES = (
-    "pending",    # When the employee submits a leave request and is waiting for approval
-    "approved",   # When the leave request is approved by admin
-    "rejected",   # When the leave request is rejected by admin
-)
-
 class Status(db.Model):
     # Name of the table
     __tablename__ = "status"
@@ -24,8 +17,8 @@ class StatusSchema(ma.Schema):
     # Nested relationship field
     leave_requests = fields.List(fields.Nested('LeaveRequestSchema', exclude=["status"]))
 
-    # Validate status name against predefined values
-    status_name = fields.String(validate=OneOf(VALID_STATUSES))
+    # Validate status name against predefined values using the database records
+    status_name = fields.String(validate=OneOf(["pending", "approved", "rejected"]))
 
     class Meta:
         # Fields to expose

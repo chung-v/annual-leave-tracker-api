@@ -5,7 +5,7 @@ from init import db, bcrypt
 from models.department import Department
 from models.team import Team
 from models.employee import Employee
-from models.status import Status, VALID_STATUSES
+from models.status import Status
 from models.leave_request import LeaveRequest
 
 db_commands = Blueprint("db", __name__)
@@ -93,10 +93,18 @@ def seed_tables():
     db.session.add_all(employees)
 
     # Create a list of Status instances
-    statuses = [Status(status_name=status) for status in VALID_STATUSES]
+    statuses = [
+        Status(status_name="pending"),
+        Status(status_name="approved"),
+        Status(status_name="rejected")
+    ]
 
     db.session.add_all(statuses)
-    db.session.commit()
+    db.session.commit()  # Commit to save status records before referencing them in LeaveRequest instances
+
+    pending_status_id = statuses[0].id
+    approved_status_id = statuses[1].id
+    rejected_status_id = statuses[2].id
 
     # Create a list of LeaveRequest instances
     leave_requests = [
@@ -104,19 +112,19 @@ def seed_tables():
             start_date=date(2024, 10, 1),
             end_date=date(2024, 10, 4),
             employee=employees[3],  # Assign to Cecelia
-            status=statuses[0]      # Pending
+            status_id=pending_status_id
         ),
         LeaveRequest(
-            start_date=date(2024, 11, 11),
-            end_date=date(2024, 11, 15),
+            start_date=date(2024, 10, 7),
+            end_date=date(2024, 10, 11),
             employee=employees[5],  # Assign to Sue
-            status=statuses[1]      # Approved
+            status_id=approved_status_id
         ),
         LeaveRequest(
             start_date=date(2024, 11, 25),
             end_date=date(2024, 11, 27),
             employee=employees[5],  # Assign to Sue
-            status=statuses[2]      # Rejected
+            status_id=rejected_status_id
         )
     ]
 

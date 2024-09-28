@@ -27,4 +27,4 @@ class DepartmentSchema(ma.Schema):
 department_schema = DepartmentSchema()
 
 # To handle a list of department objects
-departments_schema = DepartmentSchema(many=True)
+departments_schema = DepartmentSchema(many=True, exclude=["teams"])
