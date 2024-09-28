@@ -51,7 +51,7 @@ def seed_tables():
             last_name = "Smith",
             team_id = 2,
             email = "john.smith@email.com",
-            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
+            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8"),
             is_admin = True
         ),
         Employee(
@@ -67,14 +67,14 @@ def seed_tables():
             last_name = "Woodward",
             team_id = 3,
             email = "cecelia.woodward@email.com",
-            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
+            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8"),
         ),
         Employee(
             first_name = "Parker",
             last_name = "Durham",
             team_id = 4,
             email = "parker.durham@email.com",
-            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
+            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8"),
             is_admin = True
         ),
         Employee(
@@ -82,7 +82,7 @@ def seed_tables():
             last_name = "Joseph",
             team_id = 4,
             email = "sue.joseph@email.com",
-            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8")
+            password = bcrypt.generate_password_hash("q1w2e3").decode("utf-8"),
         )
     ]
 
@@ -118,4 +118,3 @@ def seed_tables():
 def drop_tables():
     db.drop_all()
     print("Tables dropped.")
-    
