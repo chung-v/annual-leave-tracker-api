@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
@@ -18,7 +16,7 @@ department_bp = Blueprint("department", __name__, url_prefix="/department")
 def get_all_departments():
     stmt = db.select(Department).order_by(Department.department_name.asc())
     departments = db.session.scalars(stmt)
-    return departments_schema.dump(departments)
+    return departments_schema.dump(departments), 200
 
 # Create a new department (admin only)
 @department_bp.route('/add', methods=['POST'])

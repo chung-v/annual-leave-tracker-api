@@ -17,7 +17,7 @@ employee_bp = Blueprint("employee", __name__, url_prefix="/employee")
 @auth_as_admin_decorator
 def get_all_employees():
     # Query the database for all employees
-    stmt = db.select(Employee)  # You can choose any order you prefer
+    stmt = db.select(Employee)
     employees = db.session.scalars(stmt)
 
     # Return the list of employees
