@@ -15,25 +15,26 @@ class Employee(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
+    # Relationships
     team = db.relationship('Team', back_populates='employees')
     leave_requests = db.relationship('LeaveRequest', back_populates='employee')
 
 class EmployeeSchema(ma.Schema):
-    # Nested fields
+    # Nested relationship fields
     leave_requests = fields.List(fields.Nested('LeaveRequestSchema', exclude=["employee"]))
     team = fields.Nested('TeamSchema', exclude=["employees"])
 
     # Email format validation
     email = fields.String(required=True, validate=Regexp(r"^\S+@\S+\.\S+$", error="Invalid email format."))
-
     # Password length validation
     password = fields.String(load_only=True, required=True, validate=Length(min=6, error="Password must be at least 6 characters long."))
 
     class Meta:
+        # Fields to expose
         fields = ("id", "first_name", "last_name", "email", "password", "is_admin", "leave_requests", "team_id", "team")
 
 # To handle a single employee object
-employee_schema = EmployeeSchema(exclude=["password"])
+employee_schema = EmployeeSchema(exclude=["password", "leave_requests", "team_id"])
 
 # To handle a list of employee objects
 employees_schema = EmployeeSchema(many=True, exclude=["password", "leave_requests", "team_id"])

@@ -16,7 +16,8 @@ class Department(db.Model):
 class DepartmentSchema(ma.Schema):
     # Nested relationship field
     teams = fields.List(fields.Nested('TeamSchema', exclude=["department"]))
-#    Require department_name to be a non-empty string
+
+    # Department name validation
     department_name = fields.String(required=True, validate=Length(min=1, error="Department name cannot be empty."))
     
     class Meta:
