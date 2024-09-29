@@ -10,7 +10,7 @@ from psycopg2 import errorcodes
 
 department_bp = Blueprint("department", __name__, url_prefix="/department")
 
-# Get a list of all departments
+# View a list of all departments
 @department_bp.route("/list", methods=['GET'])
 @jwt_required()
 def get_all_departments():
@@ -24,36 +24,39 @@ def get_all_departments():
 @auth_as_admin_decorator
 def create_department():
     try:
-        # get the data from the body of the request
+        # Get data from the body of the request
         department_data = department_schema.load(request.get_json())
-        # create a new department model instance
+
+        # Create a new department model instance
         department = Department(
             department_name = department_data.get("department_name"),
         )
-        # add and commit to the DB
+
+        # Add and commit to the database
         db.session.add(department)
         db.session.commit()
-        # response message
+        # Return acknowledgement
         return department_schema.dump(department), 201
 
+    # Error handling
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
-            return {"error": "Department is already registered."}, 400
+            return {"error": f"{department.department_name} Department is already registered."}, 400
     
 # Delete a department (admin only)
 @department_bp.route("/delete/<int:department_id>", methods=["DELETE"])
 @jwt_required()
 @auth_as_admin_decorator
 def delete_department(department_id):
-    # fetch the department from the database
+    # Fetch the department from the database
     stmt = db.select(Department).filter_by(id=department_id)
     department = db.session.scalar(stmt)
-    # if department exists
+
+    # If department exists, delete the department
     if department:
-        # delete the department
         db.session.delete(department)
         db.session.commit()
-        return {"message": f"Department ID {department_id} ({department.department_name}) deleted successfully."}
+        return {"message": f"Department ID {department_id} ({department.department_name}) deleted successfully."}, 200
+    # Else, return error message
     else:
-        # return error message
         return {"error": f"Department ID {department_id} not found."}, 404

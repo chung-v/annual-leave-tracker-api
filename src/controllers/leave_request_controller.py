@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -18,11 +16,14 @@ leave_request_bp = Blueprint("leave_request", __name__, url_prefix="/leave_reque
 @jwt_required()
 def view_leave_requests():
     employee_id = get_jwt_identity()
+
+    # Query leave requests for the current user
     leave_requests = LeaveRequest.query.filter_by(employee_id=employee_id).all()
     
+    # If leave requests are found, return them
     if leave_requests:
         return leave_requests_schema.dump(leave_requests), 200
-    
+    # Else, return message
     return {"message": "No leave requests found."}, 404
 
 # View specific leave request for self
@@ -30,11 +31,14 @@ def view_leave_requests():
 @jwt_required()
 def view_specific_leave_request(leave_request_id):
     employee_id = get_jwt_identity()
+
+    # Query specific leave request for the current user
     leave_request = LeaveRequest.query.filter_by(id=leave_request_id, employee_id=employee_id).first()
 
+    # If the leave request is found, return it
     if leave_request:
         return leave_request_schema.dump(leave_request), 200
-    
+    # Else, return error message
     return {"error": "Leave request not found."}, 404
 
 # Add new leave request
@@ -43,19 +47,21 @@ def view_specific_leave_request(leave_request_id):
 def add_leave_request():
     body_data = request.get_json()
 
-    # Validate the data before creating the LeaveRequest
+    # Validate data before creating the LeaveRequest
     start_date = body_data.get("start_date")
     end_date = body_data.get("end_date")
 
+    # Check if both start_date and end_date are provided
     if not start_date or not end_date:
         return {"error": "Start date and end date are required."}, 400
-    
+    # Check if start_date is before the end_date
     if start_date > end_date:
         return {"error": "Start date must be before end date."}, 400
 
     # Fetch the "pending" status from the database
     pending_status = db.session.query(Status).filter(Status.status_name == "pending").first()
     
+    # Create a new leave request model instance
     leave_request = LeaveRequest(
         employee_id=get_jwt_identity(),
         start_date=start_date,
@@ -67,8 +73,7 @@ def add_leave_request():
         db.session.add(leave_request)
         db.session.commit()
         return leave_request_schema.dump(leave_request), 201
-      
-        # Error handling
+    # Error handling
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
             return {"error": "Leave request with the same dates already exists."}, 400
@@ -81,14 +86,13 @@ def delete_leave_request(leave_request_id):
     stmt = db.select(LeaveRequest).filter_by(id=leave_request_id)
     leave_request = db.session.scalar(stmt)
     
-    # If leave request exists
+    # If leave request exists, delete the leave request
     if leave_request:
-        # Delete the leave request
         db.session.delete(leave_request)
         db.session.commit()
-        return {"message": f"Leave request ID {leave_request_id} deleted successfully."}
+        return {"message": f"Leave request ID {leave_request_id} deleted successfully."}, 200
+    # Else, return error message
     else:
-        # Return error message
         return {"error": f"Leave request ID {leave_request_id} not found."}, 404
 
 # Approve leave request (admin only)
@@ -104,13 +108,10 @@ def approve_leave_request(leave_request_id):
     if leave_request:
         # Fetch the "approved" status from the database
         approved_status = db.session.query(Status).filter(Status.status_name == "approved").first()
-
         # Update the status of the leave request
         leave_request.status = approved_status
-        
         db.session.commit()
         return leave_request_schema.dump(leave_request), 200
-
+    # Else, return error message
     else:
-        # Return error message if leave request is not found
         return {"error": f"Leave request ID {leave_request_id} not found."}, 404
