@@ -170,6 +170,8 @@ Team and Department Models: A many-to-one relationship between Team and Departme
 
 Status Model: Defines different statuses for leave requests (e.g., pending, approved), linked through a foreign key in LeaveRequest. This allows the system to manage leave request workflows by updating status IDs.
 
+**Example of Team Model:**
+
     class Team(db.Model):
     # Name of the table
     __tablename__ = "team"
@@ -184,13 +186,13 @@ Status Model: Defines different statuses for leave requests (e.g., pending, appr
     department = db.relationship('Department', back_populates='teams')
 
 ## R8 Explain how to use this application’s API endpoints. Each endpoint should be explained, including the following data for each endpoint:
-* HTTP verb
-* Path or route
-* Any required body or header data
-* Response
+* #### HTTP verb
+* #### Path or route
+* #### Any required body or header data
+* #### Response
 
 ### Authentication Routes
-#### 1. /auth/register
+#### <u>1. /auth/register</u>
 Description: Register a new employee.
 HTTP verb: POST
 Required header: None
@@ -209,7 +211,7 @@ Password has a minimum length for data security.
 ![Failed response: /auth/register](/doc/auth_controller/auth_1d.png)
 Required attributes must be filled.
 
-#### 2. /auth/login
+#### <u>2. /auth/login</u>
 Description: Login an existing employee.
 HTTP verb: POST
 Required header: None
@@ -222,7 +224,7 @@ Employee is logged in and JWT is created. This expires in 1 day. Employee can al
 ![Failed response: /auth/login](/doc/auth_controller/auth_2b.png)
 Correct email and password is required to login.
 
-#### 3. /auth/update
+#### <u>3. /auth/update</u>
 Description: Update employee details - first name, last name or password.
 HTTP verb: PUT, PATCH
 Required header: @jwt_required()
@@ -235,7 +237,7 @@ Employee information is updated and displayed.
 ![Failed response: /auth/update](/doc/auth_controller/auth_3b.png)
 Employees without admin rights can only update their name and password, for data accuracy.
 
-#### 4. /auth/update/<int:employee_id>
+#### <u>4. /auth/update/<int:employee_id></u>
 Description: Update employee details (admin only) - first name, last name, email, or team ID.
 HTTP verb: PUT, PATCH
 Required header: @jwt_required(), @auth_as_admin_decorator
@@ -251,7 +253,7 @@ Department ID cannot be manually changed as it is linked to the Team ID.
 ![Failed response: /auth/update/<int:employee_id>](/doc/auth_controller/auth_4c.png)
 Employees without admin rights cannot access the route.
 
-#### 5. /auth/delete/<int:employee_id>
+#### <u>5. /auth/delete/<int:employee_id></u>
 Description: Delete employee (admin only)
 HTTP verb: DELETE
 Required header: @jwt_required(), @auth_as_admin_decorator
@@ -264,7 +266,7 @@ Employee is removed from the database.
 ![Failed response: /auth/delete/<int:employee_id>](/doc/auth_controller/auth_5b.png)
 Error message if employee does not exist on the database.
 
-#### 6. /auth/admin/<int:employee_id>
+#### <u>6. /auth/admin/<int:employee_id></u>
 Description: Add employee as admin
 HTTP verb: POST
 Required header: @jwt_required(), @auth_as_admin_decorator
@@ -280,7 +282,7 @@ Prevents admins being added as an admin again.
 ![Failed response: /auth/admin/<int:employee_id>](/doc/auth_controller/auth_6c.png)
 Only Employee IDs that exist in the database can be added as an admin.
 
-#### 7. /auth/admin/<int:employee_id>
+#### <u>7. /auth/admin/<int:employee_id></u>
 Description: Delete employee as admin
 HTTP verb: DELETE
 Required header: @jwt_required(), @auth_as_admin_decorator
