@@ -55,7 +55,7 @@ Trello was employed for project planning and task management. Each task featured
 ![Trello progress on 14/09/24](/doc/trello_3.png)
 
 ### Progress made by 29/09/24
-
+![Trello progress on 29/09/24](/doc/trello_4.png)
 
 ## R3 List and explain the third-party services, packages and dependencies used in this app.
 
@@ -98,9 +98,7 @@ Trello was employed for project planning and task management. Each task featured
 - **Werkzeug==3.0.3:** Werkzeug is a comprehensive WSGI web application library that serves as Flask's underlying toolkit, offering utilities and middleware components for effective request handling, debugging, and routing.
 
 ## R4 Explain the benefits and drawbacks of this app’s underlying database system.
-PostgreSQL is used as the database system for this API.
-
-The advantages of using PostgreSQL include its adherence to ACID principles, which ensure the integrity, consistency, and reliability of transactions. This system also employs Multi-Version Concurrency Control (MVCC), allowing multiple transactions to occur simultaneously without locking the data, thus preventing conflicts and enhancing performance. PostgreSQL's extensibility permits users to create custom data types, operators, and functions, catering to specific project needs. Furthermore, it benefits from an active community that contributes to comprehensive documentation and regular updates, providing ongoing support.
+PostgreSQL is used as the database system for this API. The advantages of using PostgreSQL include its adherence to ACID principles, which ensure the integrity, consistency, and reliability of transactions. This system also employs Multi-Version Concurrency Control (MVCC), allowing multiple transactions to occur simultaneously without locking the data, thus preventing conflicts and enhancing performance. PostgreSQL's extensibility permits users to create custom data types, operators, and functions, catering to specific project needs. Furthermore, it benefits from an active community that contributes to comprehensive documentation and regular updates, providing ongoing support.
 
 Despite its strengths, PostgreSQL does have some drawbacks. It can be memory and CPU-intensive, which may lead to performance issues as data volume and complexity increase. The setup and configuration process can be intricate, especially for those looking to leverage its advanced capabilities, resulting in a steeper learning curve for beginners. Being an open-source database, there may be inconsistencies in user-friendly features or interfaces due to contributions from various communities, potentially leading to compatibility issues that require specific software or hardware.
 
@@ -160,39 +158,90 @@ The use of foreign key relationships between these models enforces data integrit
 The structured relationships between the models in the ERD enhance the database design by ensuring data integrity, reducing redundancy, improving query performance, and facilitating maintainability. By implementing a clear, normalised design, the database becomes more scalable, easier to extend, and better equipped to handle complex queries and business logic while maintaining efficiency and consistency.
 
 ## R7 Explain the implemented models and their relationships, including how the relationships aid the database implementation. This should focus on the database implementation AFTER coding has begun, eg. during the project development phase.
-The implemented models in the project include Employee, LeaveRequest, Status, Team, and Department, each representing a table in the database. The relationships between these models follow typical one-to-many and many-to-one patterns to efficiently manage the application's data.
+The implemented models in the project include `Employee`, `LeaveRequest`, `Status`, `Team`, and `Department`, each representing a table in the database. The relationships between these models follow typical one-to-many and many-to-one patterns to efficiently manage the application's data.
 
-Employee Model: Stores employee details, such as first_name, email, and a foreign key team_id linking to the Team model. This establishes a many-to-one relationship, where multiple employees can belong to one team.
+**Employee Model**: Stores employee details, such as `first_name`, `email`, and a foreign key `team_id` linking to the `Team` model. This establishes a many-to-one relationship, where multiple employees can belong to one team.
 
-LeaveRequest Model: Captures the details of leave requests, including employee_id (foreign key to Employee), status_id (foreign key to Status), and start and end dates. The many-to-one relationship with Employee ensures each leave request is associated with a specific employee, while the relationship with Status tracks the current state of the leave request.
+    class Employee(db.Model):
+        # Name of the table
+        __tablename__ = "employee"
 
-Team and Department Models: A many-to-one relationship between Team and Department ensures that each team is linked to a specific department, allowing for organised data retrieval and reporting.
+        # Attributes of the table
+        id = db.Column(db.Integer, primary_key=True)
+        first_name = db.Column(db.String(50), nullable=False)
+        last_name = db.Column(db.String(50), nullable=False)
+        email = db.Column(db.String(100), unique=True, nullable=False)
+        password = db.Column(db.String(100), nullable=False)
+        team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+        is_admin = db.Column(db.Boolean, default=False)
 
-Status Model: Defines different statuses for leave requests (e.g., pending, approved), linked through a foreign key in LeaveRequest. This allows the system to manage leave request workflows by updating status IDs.
+        # Relationships
+        team = db.relationship('Team', back_populates='employees')
+        leave_requests = db.relationship('LeaveRequest', back_populates='employee')
 
-**Example of Team Model:**
+**LeaveRequest Model**: Captures the details of leave requests, including `employee_id` (foreign key to `Employee`), `status_id` (foreign key to `Status`), and start and end dates. The many-to-one relationship with `Employee` ensures each leave request is associated with a specific employee, while the relationship with `Status` tracks the current state of the leave request.
+
+    class LeaveRequest(db.Model):
+        # Name of the table
+        __tablename__ = "leave_request"
+
+        # Attributes of the table
+        id = db.Column(db.Integer, primary_key=True)
+        employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+        start_date = db.Column(db.Date, nullable=False)
+        end_date = db.Column(db.Date, nullable=False)
+        status_id = db.Column(db.Integer, db.ForeignKey('status.id'), nullable=False)
+
+        employee = db.relationship('Employee', back_populates='leave_requests')
+        status = db.relationship('Status', back_populates='leave_requests')
+
+**Team and Department Models**: A many-to-one relationship between `Team` and `Department` ensures that each team is linked to a specific department, allowing for organised data retrieval and reporting.
 
     class Team(db.Model):
-    # Name of the table
-    __tablename__ = "team"
+        # Name of the table
+        __tablename__ = "team"
 
-    # Attributes of the table
-    id = db.Column(db.Integer, primary_key=True)
-    team_name = db.Column(db.String(100), nullable=False, unique=True)
-    department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False)
+        # Attributes of the table
+        id = db.Column(db.Integer, primary_key=True)
+        team_name = db.Column(db.String(100), nullable=False, unique=True)
+        department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False)
 
-    # Relationships
-    employees = db.relationship('Employee', back_populates='team')
-    department = db.relationship('Department', back_populates='teams')
+        # Relationships
+        employees = db.relationship('Employee', back_populates='team')
+        department = db.relationship('Department', back_populates='teams')
+
+    class Department(db.Model):
+        # Name of the table
+        __tablename__ = "department"
+
+        # Attributes of the table
+        id = db.Column(db.Integer, primary_key=True)
+        department_name = db.Column(db.String(100), nullable=False, unique=True)
+
+        # Relationships
+        teams = db.relationship('Team', back_populates='department')
+
+**Status Model**: Defines different statuses for leave requests (e.g. pending, approved), linked through a foreign key in `LeaveRequest`. This allows the system to manage leave request workflows by updating status IDs.
+
+    class Status(db.Model):
+        # Name of the table
+        __tablename__ = "status"
+
+        # Attributes of the table
+        id = db.Column(db.Integer, primary_key=True)
+        status_name = db.Column(db.String, nullable=False, unique=True)
+
+        # Relationships
+        leave_requests = db.relationship('LeaveRequest', back_populates='status')
 
 ## R8 Explain how to use this application’s API endpoints. Each endpoint should be explained, including the following data for each endpoint:
 * #### HTTP verb
 * #### Path or route
 * #### Any required body or header data
-* #### Response
+* #### Response <br>
 
 ### Authentication Routes
-#### <u>1. /auth/register</u>
+#### 1. /auth/register
 Description: Register a new employee.
 HTTP verb: POST
 Required header: None
@@ -211,7 +260,7 @@ Password has a minimum length for data security.
 ![Failed response: /auth/register](/doc/auth_controller/auth_1d.png)
 Required attributes must be filled.
 
-#### <u>2. /auth/login</u>
+#### 2. /auth/login
 Description: Login an existing employee.
 HTTP verb: POST
 Required header: None
@@ -224,7 +273,7 @@ Employee is logged in and JWT is created. This expires in 1 day. Employee can al
 ![Failed response: /auth/login](/doc/auth_controller/auth_2b.png)
 Correct email and password is required to login.
 
-#### <u>3. /auth/update</u>
+#### 3. /auth/update
 Description: Update employee details - first name, last name or password.
 HTTP verb: PUT, PATCH
 Required header: @jwt_required()
@@ -237,7 +286,7 @@ Employee information is updated and displayed.
 ![Failed response: /auth/update](/doc/auth_controller/auth_3b.png)
 Employees without admin rights can only update their name and password, for data accuracy.
 
-#### <u>4. /auth/update/<int:employee_id></u>
+#### 4. /auth/update/<int:employee_id>
 Description: Update employee details (admin only) - first name, last name, email, or team ID.
 HTTP verb: PUT, PATCH
 Required header: @jwt_required(), @auth_as_admin_decorator
@@ -253,7 +302,7 @@ Department ID cannot be manually changed as it is linked to the Team ID.
 ![Failed response: /auth/update/<int:employee_id>](/doc/auth_controller/auth_4c.png)
 Employees without admin rights cannot access the route.
 
-#### <u>5. /auth/delete/<int:employee_id></u>
+#### 5. /auth/delete/<int:employee_id>
 Description: Delete employee (admin only)
 HTTP verb: DELETE
 Required header: @jwt_required(), @auth_as_admin_decorator
@@ -266,7 +315,7 @@ Employee is removed from the database.
 ![Failed response: /auth/delete/<int:employee_id>](/doc/auth_controller/auth_5b.png)
 Error message if employee does not exist on the database.
 
-#### <u>6. /auth/admin/<int:employee_id></u>
+#### 6. /auth/admin/<int:employee_id>
 Description: Add employee as admin
 HTTP verb: POST
 Required header: @jwt_required(), @auth_as_admin_decorator
@@ -282,7 +331,7 @@ Prevents admins being added as an admin again.
 ![Failed response: /auth/admin/<int:employee_id>](/doc/auth_controller/auth_6c.png)
 Only Employee IDs that exist in the database can be added as an admin.
 
-#### <u>7. /auth/admin/<int:employee_id></u>
+#### 7. /auth/admin/<int:employee_id>
 Description: Delete employee as admin
 HTTP verb: DELETE
 Required header: @jwt_required(), @auth_as_admin_decorator
@@ -340,7 +389,7 @@ Only Department IDs that exist in the database can be removed.
 
 ### Team Routes
 #### 1. /team/list
-Description: Get a list of all teams
+Description: View a list of all teams
 HTTP verb: GET
 Required header: @jwt_required()
 
