@@ -31,10 +31,10 @@ Before running the application, you will need to install PostgreSQL and the nece
 9. Install the required packages. <br>
 `pip install -r requirements.txt`
 
-10. Create all database tables defined in the application.
+10. Create all database tables defined in the application. <br>
 `flask db create`
 
-11. Run the application.
+11. Run the application. <br>
 `flask run`
 
 ## R1 Explain the problem that this app will solve, and explain how this app solves or addresses the problem.
@@ -126,7 +126,7 @@ This application was built using SQLAlchemy as the Object-Relational Mapping (OR
 
     team = db.relationship('Team', back_populates='employees')
 
-**Foreign Keys**: Foreign keys are used to define the relationships between different entities, enhancing data integrity and relational organization. By using foreign keys, SQLAlchemy ensures that the relationships between tables are maintained correctly, preventing orphaned records and maintaining referential integrity. This is crucial for data consistency in a relational database.
+**Foreign Keys**: Foreign keys are used to define the relationships between different entities, enhancing data integrity and relational organisation. By using foreign keys, SQLAlchemy ensures that the relationships between tables are maintained correctly, preventing orphaned records and maintaining referential integrity. This is crucial for data consistency in a relational database.
 
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
 
@@ -153,11 +153,245 @@ This application was built using SQLAlchemy as the Object-Relational Mapping (OR
 
 ![Annual Leave Tracker ERD](/doc/ERD.png)
 
-## R7 Explain the implemented models and their relationships, including how the relationships aid the database implementation. This should focus on the database implementation AFTER coding has begun, eg. during the project development phase.
+The ERD outlines a normalised database design for an employee leave tracking system, comprising five key entities: `Employee`, `LeaveRequest`, `Status`, `Team`, and `Department`. These relationships are designed in Third Normal Form (3NF), ensuring that data is well-structured and efficiently managed. Each entity focuses on a specific concept, like employees or teams, with foreign keys linking them together. This normalisation prevents data redundancy by storing information such as team names or status labels in separate tables and referencing them through foreign keys. For example, `LeaveRequest` links to `Status` through `status_id` to avoid repeating status names in every leave request.
 
+The use of foreign key relationships between these models enforces data integrity and ensures consistency across the database. Relationships such as `Employee-LeaveRequest` and `Team-Employee` guarantee that employees belong to valid teams and that leave requests are associated with legitimate employees, improving data accuracy. The design also allows for efficient data retrieval through SQL joins, enabling fast queries across tables, such as fetching all leave requests for a particular team or department.
+
+The structured relationships between the models in the ERD enhance the database design by ensuring data integrity, reducing redundancy, improving query performance, and facilitating maintainability. By implementing a clear, normalised design, the database becomes more scalable, easier to extend, and better equipped to handle complex queries and business logic while maintaining efficiency and consistency.
+
+## R7 Explain the implemented models and their relationships, including how the relationships aid the database implementation. This should focus on the database implementation AFTER coding has begun, eg. during the project development phase.
+The implemented models in the project include Employee, LeaveRequest, Status, Team, and Department, each representing a table in the database. The relationships between these models follow typical one-to-many and many-to-one patterns to efficiently manage the application's data.
+
+Employee Model: Stores employee details, such as first_name, email, and a foreign key team_id linking to the Team model. This establishes a many-to-one relationship, where multiple employees can belong to one team.
+
+LeaveRequest Model: Captures the details of leave requests, including employee_id (foreign key to Employee), status_id (foreign key to Status), and start and end dates. The many-to-one relationship with Employee ensures each leave request is associated with a specific employee, while the relationship with Status tracks the current state of the leave request.
+
+Team and Department Models: A many-to-one relationship between Team and Department ensures that each team is linked to a specific department, allowing for organised data retrieval and reporting.
+
+Status Model: Defines different statuses for leave requests (e.g., pending, approved), linked through a foreign key in LeaveRequest. This allows the system to manage leave request workflows by updating status IDs.
+
+    class Team(db.Model):
+    # Name of the table
+    __tablename__ = "team"
+
+    # Attributes of the table
+    id = db.Column(db.Integer, primary_key=True)
+    team_name = db.Column(db.String(100), nullable=False, unique=True)
+    department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False)
+
+    # Relationships
+    employees = db.relationship('Employee', back_populates='team')
+    department = db.relationship('Department', back_populates='teams')
 
 ## R8 Explain how to use this application’s API endpoints. Each endpoint should be explained, including the following data for each endpoint:
 * HTTP verb
 * Path or route
 * Any required body or header data
 * Response
+
+### Authentication Routes
+
+#### 1. /auth/register
+Description: Register a new employee.
+HTTP verb: POST
+
+Successful response:
+
+Failed response:
+
+#### 2. /auth/login
+Description: Login an existing employee.
+HTTP verb: POST
+
+Successful response:
+
+Failed response:
+
+#### 3. /auth/update
+Description: Update employee details - first name, last name or password.
+HTTP verb: PUT, PATCH
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+#### 4. /auth/update/<int:employee_id>
+Description: Update employee details (admin only) - first name, last name, email, or team ID.
+HTTP verb: PUT, PATCH
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+#### 5. /auth/delete/<int:employee_id>
+Description: Delete employee (admin only)
+HTTP verb: DELETE
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+#### 6. /auth/admin/<int:employee_id>
+Description: Add employee as admin
+HTTP verb: POST
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+#### 7. /auth/admin/<int:employee_id>
+Description: Delete employee as admin
+HTTP verb: DELETE
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+
+### Department Routes
+
+#### 1. /department/list
+Description: View a list of all departments
+HTTP verb: GET
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+#### 2. /department/add
+Description: Create a new department (admin only)
+HTTP verb: POST
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+#### 3. /department/delete/<int:department_id>
+Description: Delete a department (admin only)
+HTTP verb: DELETE
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+
+### Team Routes
+
+#### 1. /team/list
+Description: Get a list of all teams
+HTTP verb: GET
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+#### 2. /team/list/<int:team_id>
+Description: View approved leave in upcoming month for a specific team
+HTTP verb: GET
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+#### 3. /team/add
+Description: Create a new team (admin only)
+Required header: @jwt_required(), @auth_as_admin_decorator
+HTTP verb: POST
+
+Successful response:
+
+Failed response:
+
+#### 4. /team/delete/<int:team_id>
+Description: Delete a team (admin only)
+HTTP verb: DELETE
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+
+### Employee Routes
+
+#### 1. /employee/<int:employee_id>
+Description: View approved leave in the upcoming month for a specific employee
+HTTP verb: GET
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+
+#### 2. /employee/list
+Description: Get a list of all employees (admin only)
+HTTP verb: GET
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
+
+### Leave Request Routes
+
+#### 1. /leave_request
+Description: View all leave requests for self
+HTTP verb: GET
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+
+#### 2. /leave_request/<int:leave_request_id>
+Description: View specific leave request for self
+HTTP verb: GET
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+
+#### 3. /leave_request/add
+Description: Add new leave request
+HTTP verb: POST
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+
+#### 4. /leave_request/delete/<int:leave_request_id>
+Description: Delete leave request
+HTTP verb: DELETE
+Required header: @jwt_required()
+
+Successful response:
+
+Failed response:
+
+
+#### 5. /leave_request/approve/<int:leave_request_id>
+Description: Approve leave request (admin only)
+HTTP verb: POST
+Required header: @jwt_required(), @auth_as_admin_decorator
+
+Successful response:
+
+Failed response:
+
