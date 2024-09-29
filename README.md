@@ -1,14 +1,41 @@
 # Annual Leave Tracker API - Veronica Chung T2A2
 
 ## Application Setup
-Before running the application, you will need to install the necessary dependencies specified in the `requirements.txt` file.
+Before running the application, you will need to install PostgreSQL and the necessary dependencies specified in the `requirements.txt` file.
 
-1. Create and activate a virtual environment to keep the project's dependencies isolated. <br>
+1. Start PostgreSQL. <br>
+`sudo -u postgres psql`
+
+2. Create a new user with a password. <br>
+`CREATE USER {username} WITH PASSWORD '{password}';`
+
+3. Create a new database. <br>
+`CREATE DATABASE {database_name};`
+
+4. Grant the user all privileges in the database. <br>
+`GRANT ALL PRIVILEGES ON DATABASE {database_name} TO {username};`
+
+5. Connect to the database <br>
+`\c {database_name}`
+
+6. Grant the user to use the public schema in the database. <br>
+`GRANT USAGE ON SCHEMA public TO {username};`
+
+7. Clone the repository. <br>
+`git clone https://github.com/chung-v/veronicachung-t2a2.git`
+
+8. Create and activate a virtual environment to keep the project's dependencies isolated. <br>
 `python -m venv .venv` <br>
 `source .venv/bin/activate`
 
-2. Install the required packages. <br>
+9. Install the required packages. <br>
 `pip install -r requirements.txt`
+
+10. Create all database tables defined in the application.
+`flask db create`
+
+11. Run the application.
+`flask run`
 
 ## R1 Explain the problem that this app will solve, and explain how this app solves or addresses the problem.
 This Annual Leave Tracker API addresses significant challenges in managing employee leave in workplaces that rely on interdepartmental collaboration. Poor coordination of leave schedules can disrupt workflows and delay critical tasks, while a lack of visibility into colleagues' planned absences complicates project management. Many organisations still depend on manual processes like spreadsheets, which are prone to errors and lack real-time access to leave data. Additionally, manual approval systems often create bottlenecks, delaying important decisions and disrupting operations.
@@ -16,6 +43,18 @@ This Annual Leave Tracker API addresses significant challenges in managing emplo
 This API solves these issues by offering real-time visibility into approved leaves, facilitating better coordination across departments. With role-based access control, only authorised admin users can approve, modify or remove leave requests, which helps maintain data integrity. By centralising leave information, the API enables managers to make informed decisions and plan effectively around team availability, thus minimising disruptions to project timelines and enhancing overall efficiency.
 
 ## R2 Describe the way tasks are allocated and tracked in your project.
+Trello was employed for project planning and task management. Each task featured a checklist to guarantee that all elements of the project were addressed. Tasks were prioritised depending on the significance of the files necessary to operate the application.
+
+### Progress made by 17/09/24
+![Trello progress on 17/09/24](/doc/trello_1.png)
+
+### Progress made by 22/09/24
+![Trello progress on 12/09/24](/doc/trello_2.png)
+
+### Progress made by 24/09/24
+![Trello progress on 14/09/24](/doc/trello_3.png)
+
+### Progress made by 29/09/24
 
 
 ## R3 List and explain the third-party services, packages and dependencies used in this app.
@@ -66,36 +105,53 @@ The advantages of using PostgreSQL include its adherence to ACID principles, whi
 Despite its strengths, PostgreSQL does have some drawbacks. It can be memory and CPU-intensive, which may lead to performance issues as data volume and complexity increase. The setup and configuration process can be intricate, especially for those looking to leverage its advanced capabilities, resulting in a steeper learning curve for beginners. Being an open-source database, there may be inconsistencies in user-friendly features or interfaces due to contributions from various communities, potentially leading to compatibility issues that require specific software or hardware.
 
 ## R5 Explain the features, purpose and functionalities of the object-relational mapping system (ORM) used in this app.
-This app is built using SQLAlchemy as the Object-Relational Mapping (ORM) system. It acts as a bridge between Python application code and relational databases. By mapping database tables to Python classes, it simplifies database interactions and eliminates the need for raw SQL queries.
+### Purpose and Functionalities
+This application was built using SQLAlchemy as the Object-Relational Mapping (ORM) system. It bridges the gap between Python application code and relational databases, fostering a clearer coding approach for developers by interacting with the database using Python objects instead of raw SQL queries. SQLAlchemy simplifies interactions with the database and enhances code readability and maintainability.
 
 ### Features
-**Model Definitions:** Database tables like `User` are represented as Python classes, where class attributes correspond to table columns.
-    
-    class User(db.Model):
-    __tablename__ = "users"
+**Models**: SQLAlchemy allows the definition of models where database tables like `Employee` are represented as Python classes. Each class attribute corresponds to a column in the database table, making it easy to define the structure of your data and its types. This provides a clear and structured way to interact with the database.
+
+    class Employee(db.Model):
+    __tablename__ = "employee"
+
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
-**CRUD Operations:** Create, Read, Update, and Delete operations to interact with the database effectively.
+**Relationships**: SQLAlchemy simplifies handling relationships between tables by allowing the user to define relationships directly in their models. This enables easy access to related data, making it intuitive to navigate between entities. In the below example, the relationship between `Employee` and `Team` is established through a foreign key, allowing you to fetch all employees belonging to a specific team without writing complex join queries.
 
-    @app.route("/<int:user_id>", methods=["GET"])
-    def get_user(user_id):
-        user = db.session.query(User).filter_by(id=user_id).first()
-        return user_schema.dump(user) if user else {"error": "User not found"}
+    team = db.relationship('Team', back_populates='employees')
 
-**Querying:** retrieve all entries or filter results.
+**Foreign Keys**: Foreign keys are used to define the relationships between different entities, enhancing data integrity and relational organization. By using foreign keys, SQLAlchemy ensures that the relationships between tables are maintained correctly, preventing orphaned records and maintaining referential integrity. This is crucial for data consistency in a relational database.
 
-**Joins and Relationships:** Simplify handling relationships between tables, allowing easy access to related data.
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
 
-**Schema Validation:** Enforces data integrity through column constraints like `NOT NULL` and `UNIQUE`, ensuring valid data entry.
+**CRUD Operations**: SQLAlchemy provides a straightforward way to perform CRUD (Create, Read, Update, and Delete) operations on your database. This allows developers to interact with the database easily without having to write complex SQL queries.
 
-**Foreign Keys:** Facilitates the definition of foreign keys to establish relationships between different entities.
+    # View a list of all departments
+    @department_bp.route("/list", methods=['GET'])
+    @jwt_required()
+    def get_all_departments():
+        stmt = db.select(Department).order_by(Department.department_name.asc())
+        departments = db.session.scalars(stmt)
+        return departments_schema.dump(departments), 200
 
-### Purpose and Functionalities
-SQLAlchemy is an efficient ORM tool that streamlines database interactions in this application. It enables developers to work with Python objects rather than raw SQL, fostering a clearer coding approach. By reducing the complexity of database operations, it facilitates quicker development and easier maintenance. Additionally, SQLAlchemy ensures seamless compatibility with PostgreSQL, effectively leveraging its features for optimal data management.
+**Querying**: SQLAlchemy enables robust querying capabilities to retrieve all entries or filter results based on specific conditions. This makes it simple to fetch data according to the needs of the application, whether you are looking for a single record or a list of records that match certain criteria.
+
+    # Fetch leave requests with the "pending" status
+    pending_status = db.session.query(Status).filter(Status.status_name == "pending").first()
+
+**Schema Validation**: SQLAlchemy enforces data integrity through schema validation, using column constraints like `NOT NULL` and `UNIQUE`. These constraints ensure that valid data is entered into the database, preventing issues related to invalid or duplicate entries.
+
+    email = db.Column(db.String(100), unique=True, nullable=False)  # Ensures email is unique and not null
 
 ## R6 Design an entity relationship diagram (ERD) for this app’s database, and explain how the relations between the diagrammed models will aid the database design. This should focus on the database design BEFORE coding has begun, eg. during the project planning or design phase.
 
+![Annual Leave Tracker ERD](/doc/ERD.png)
 
 ## R7 Explain the implemented models and their relationships, including how the relationships aid the database implementation. This should focus on the database implementation AFTER coding has begun, eg. during the project development phase.
 
